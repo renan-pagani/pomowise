@@ -84,6 +84,10 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
                                         // Also allow lowercase 't' for convenience
                                         app.toggle_theme_selector();
                                     }
+                                    KeyCode::Char('f') => {
+                                        // Cycle through font styles
+                                        app.animation.next_font();
+                                    }
                                     _ => {}
                                 }
                             }

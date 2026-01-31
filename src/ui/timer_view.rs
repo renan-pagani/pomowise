@@ -23,13 +23,14 @@ pub fn draw(frame: &mut Frame, app: &App) {
     let minutes = (time_secs / 60) as u8;
     let seconds = (time_secs % 60) as u8;
 
-    digits::render_time(
+    digits::render_time_with_font(
         frame,
         timer_area,
         minutes,
         seconds,
         app.animation.current_theme.primary_color(),
         app.animation.current_theme.secondary_color(),
+        app.animation.current_font,
     );
 
     // Draw timer overlay info
@@ -43,7 +44,8 @@ pub fn draw(frame: &mut Frame, app: &App) {
 
 /// Calculate a centered area for the timer digits
 fn centered_timer_area(area: Rect) -> Rect {
-    let (timer_width, timer_height) = digits::timer_dimensions();
+    // Use a larger default size to accommodate bigger fonts
+    let (timer_width, timer_height) = (40, 12);
 
     // Add some padding
     let padded_width = timer_width + 4;
@@ -148,7 +150,7 @@ fn draw_timer_overlay(frame: &mut Frame, area: Rect, app: &App) {
     );
 
     // Controls hint
-    let hint = "Space: Pause  r: Reset  Tab: Skip  t: Themes  q: Menu";
+    let hint = "Space: Pause  r: Reset  Tab: Skip  t: Themes  f: Font  q: Menu";
     let hint_len = hint.len() as u16;
     let hint_x = area.width.saturating_sub(hint_len) / 2;
     let hint_y = area.height.saturating_sub(4);

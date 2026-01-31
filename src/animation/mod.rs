@@ -1,5 +1,8 @@
 pub mod themes;
 pub mod digits;
+pub mod digit_fonts;
+
+pub use digit_fonts::DigitFont;
 
 use std::time::{Duration, Instant};
 
@@ -12,6 +15,7 @@ const THEME_ROTATION_SECS: u64 = 150;
 pub struct AnimationEngine {
     pub frame_index: usize,
     pub current_theme: ThemeType,
+    pub current_font: DigitFont,
     last_frame_time: Instant,
     last_theme_change: Instant,
     fps: u8,
@@ -22,6 +26,7 @@ impl AnimationEngine {
         Self {
             frame_index: 0,
             current_theme: ThemeType::random(),
+            current_font: DigitFont::Block3D, // Start with the fancier font
             last_frame_time: Instant::now(),
             last_theme_change: Instant::now(),
             fps: 10,
@@ -70,5 +75,15 @@ impl AnimationEngine {
     pub fn set_theme(&mut self, theme: ThemeType) {
         self.current_theme = theme;
         self.last_theme_change = Instant::now();
+    }
+
+    /// Cycle to the next font style
+    pub fn next_font(&mut self) {
+        self.current_font = self.current_font.next();
+    }
+
+    /// Set a specific font style
+    pub fn set_font(&mut self, font: DigitFont) {
+        self.current_font = font;
     }
 }

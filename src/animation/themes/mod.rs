@@ -6,6 +6,12 @@ pub mod rain;
 pub mod waves;
 pub mod shapes;
 pub mod fireworks;
+pub mod aurora;
+pub mod ocean;
+pub mod dna;
+pub mod bubbles;
+pub mod electric;
+pub mod snowfall;
 
 use ratatui::prelude::*;
 
@@ -20,6 +26,12 @@ pub enum ThemeType {
     RadioWaves,
     SpinningShapes,
     Fireworks,
+    Aurora,
+    Ocean,
+    DNA,
+    Bubbles,
+    Electric,
+    Snowfall,
 }
 
 impl ThemeType {
@@ -34,6 +46,12 @@ impl ThemeType {
             ThemeType::RadioWaves,
             ThemeType::SpinningShapes,
             ThemeType::Fireworks,
+            ThemeType::Aurora,
+            ThemeType::Ocean,
+            ThemeType::DNA,
+            ThemeType::Bubbles,
+            ThemeType::Electric,
+            ThemeType::Snowfall,
         ]
     }
 
@@ -78,6 +96,12 @@ impl ThemeType {
             ThemeType::RadioWaves => "Radio Waves",
             ThemeType::SpinningShapes => "Spinning Shapes",
             ThemeType::Fireworks => "Fireworks",
+            ThemeType::Aurora => "Aurora Borealis",
+            ThemeType::Ocean => "Ocean Waves",
+            ThemeType::DNA => "DNA Helix",
+            ThemeType::Bubbles => "Bubbles",
+            ThemeType::Electric => "Electric Storm",
+            ThemeType::Snowfall => "Snowfall",
         }
     }
 
@@ -92,6 +116,12 @@ impl ThemeType {
             ThemeType::RadioWaves => waves::render_background(frame, area, frame_index),
             ThemeType::SpinningShapes => shapes::render_background(frame, area, frame_index),
             ThemeType::Fireworks => fireworks::render_background(frame, area, frame_index),
+            ThemeType::Aurora => aurora::render_background(frame, area, frame_index),
+            ThemeType::Ocean => ocean::render_background(frame, area, frame_index),
+            ThemeType::DNA => dna::render_background(frame, area, frame_index),
+            ThemeType::Bubbles => bubbles::render_background(frame, area, frame_index),
+            ThemeType::Electric => electric::render_background(frame, area, frame_index),
+            ThemeType::Snowfall => snowfall::render_background(frame, area, frame_index),
         }
     }
 
@@ -106,6 +136,12 @@ impl ThemeType {
             ThemeType::RadioWaves => Color::Rgb(0, 255, 255),  // Neon cyan
             ThemeType::SpinningShapes => Color::Rgb(255, 255, 100), // Yellow
             ThemeType::Fireworks => Color::Rgb(255, 220, 100), // Gold
+            ThemeType::Aurora => Color::Rgb(100, 255, 150),    // Aurora green
+            ThemeType::Ocean => Color::Rgb(100, 200, 255),     // Ocean blue
+            ThemeType::DNA => Color::Rgb(150, 255, 200),       // Bio green
+            ThemeType::Bubbles => Color::Rgb(180, 220, 255),   // Bubble blue
+            ThemeType::Electric => Color::Rgb(150, 200, 255),  // Electric blue
+            ThemeType::Snowfall => Color::Rgb(220, 230, 255),  // Snow white
         }
     }
 
@@ -120,6 +156,12 @@ impl ThemeType {
             ThemeType::RadioWaves => Color::Rgb(100, 0, 150),
             ThemeType::SpinningShapes => Color::Rgb(100, 100, 0),
             ThemeType::Fireworks => Color::Rgb(150, 100, 0),
+            ThemeType::Aurora => Color::Rgb(50, 100, 80),
+            ThemeType::Ocean => Color::Rgb(30, 80, 120),
+            ThemeType::DNA => Color::Rgb(60, 120, 100),
+            ThemeType::Bubbles => Color::Rgb(80, 120, 150),
+            ThemeType::Electric => Color::Rgb(50, 80, 150),
+            ThemeType::Snowfall => Color::Rgb(100, 120, 150),
         }
     }
 
@@ -134,6 +176,12 @@ impl ThemeType {
             ThemeType::RadioWaves => Color::Rgb(10, 0, 20),
             ThemeType::SpinningShapes => Color::Rgb(10, 10, 20),
             ThemeType::Fireworks => Color::Rgb(5, 5, 15),
+            ThemeType::Aurora => Color::Rgb(5, 5, 15),
+            ThemeType::Ocean => Color::Rgb(0, 20, 40),
+            ThemeType::DNA => Color::Rgb(5, 10, 20),
+            ThemeType::Bubbles => Color::Rgb(5, 15, 35),
+            ThemeType::Electric => Color::Rgb(10, 10, 20),
+            ThemeType::Snowfall => Color::Rgb(10, 15, 25),
         }
     }
 }

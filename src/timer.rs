@@ -89,37 +89,32 @@ impl PomodoroTimer {
         }
     }
 
+    /// Advance to the next session (used when timer completes or Tab is pressed)
+    /// Cycle: Work -> Short Break -> Work -> Short Break -> Work -> Short Break -> Work -> Long Break -> repeat
     pub fn advance_state(&mut self) {
-        match &self.state {
-            TimerState::Work { lap } => {
-                if *lap < WORK_LAPS {
-                    // Continue work, next lap
-                    let lap_duration = WORK_DURATION / WORK_LAPS as u32;
-                    self.remaining = lap_duration;
-                    self.state = TimerState::Work { lap: lap + 1 };
+        // Handle paused state - advance the inner state
+        let current_state = match &self.state {
+            TimerState::Paused(inner) => inner.as_ref().clone(),
+            other => other.clone(),
+        };
+
+        match current_state {
+            TimerState::Work { .. } => {
+                // Work complete, move to break
+                self.cycle_position += 1;
+                if self.cycle_position >= 4 {
+                    // After 4 work sessions, long break
+                    self.state = TimerState::LongBreak;
+                    self.remaining = LONG_BREAK_DURATION;
                 } else {
-                    // Work session complete, move to break
-                    self.cycle_position += 1;
-                    if self.cycle_position >= 4 {
-                        // After 4 work sessions (positions 0,1,2,3), long break
-                        self.state = TimerState::LongBreak;
-                        self.remaining = LONG_BREAK_DURATION;
-                    } else {
-                        self.state = TimerState::ShortBreak { lap: 1 };
-                        self.remaining = SHORT_BREAK_DURATION;
-                    }
+                    self.state = TimerState::ShortBreak { lap: 1 };
+                    self.remaining = SHORT_BREAK_DURATION;
                 }
             }
-            TimerState::ShortBreak { lap } => {
-                if *lap < SHORT_BREAK_LAPS {
-                    let lap_duration = SHORT_BREAK_DURATION / SHORT_BREAK_LAPS as u32;
-                    self.remaining = lap_duration;
-                    self.state = TimerState::ShortBreak { lap: lap + 1 };
-                } else {
-                    // Short break complete, back to work
-                    self.state = TimerState::Work { lap: 1 };
-                    self.remaining = WORK_DURATION;
-                }
+            TimerState::ShortBreak { .. } => {
+                // Short break complete, back to work
+                self.state = TimerState::Work { lap: 1 };
+                self.remaining = WORK_DURATION;
             }
             TimerState::LongBreak => {
                 // Long break complete, reset cycle
@@ -127,7 +122,12 @@ impl PomodoroTimer {
                 self.state = TimerState::Work { lap: 1 };
                 self.remaining = WORK_DURATION;
             }
-            _ => {}
+            TimerState::Idle => {
+                // Start fresh
+                self.start();
+                return;
+            }
+            TimerState::Paused(_) => unreachable!(),
         }
         self.last_tick = Some(Instant::now());
     }
