@@ -1,8 +1,8 @@
 [package]
-name = "tui-ansy-pomo"
-version = "0.1.0"
+name = "pomowise"
+version = "0.2.0"
 edition = "2021"
-description = "Animated Pomodoro Timer with pixel-art tomato"
+description = "Animated Pomodoro Timer with beautiful themes"
 
 [dependencies]
 ratatui = "0.29"

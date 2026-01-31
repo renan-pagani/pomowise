@@ -3,6 +3,7 @@ mod timer;
 mod notification;
 mod ui;
 mod animation;
+mod scaling;
 
 use std::io;
 use std::time::Duration;
@@ -46,8 +47,14 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
 
         // Handle events with timeout for animation
         if event::poll(tick_rate)? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
+            match event::read()? {
+                // Handle terminal resize
+                Event::Resize(width, height) => {
+                    app.update_dimensions(width, height);
+                }
+
+                // Handle key events
+                Event::Key(key) if key.kind == KeyEventKind::Press => {
                     match app.screen {
                         AppScreen::Menu => match key.code {
                             KeyCode::Up | KeyCode::Char('k') => app.menu_up(),
@@ -85,8 +92,21 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
                                         app.toggle_theme_selector();
                                     }
                                     KeyCode::Char('f') => {
-                                        // Cycle through font styles
+                                        // Cycle through font styles (disables adaptive mode)
+                                        app.adaptive_font = false;
                                         app.animation.next_font();
+                                    }
+                                    KeyCode::Char('F') if key.modifiers.contains(KeyModifiers::SHIFT) => {
+                                        // Toggle adaptive font mode
+                                        app.toggle_adaptive_font();
+                                    }
+                                    KeyCode::Char('a') => {
+                                        // Toggle auto-rotation
+                                        app.toggle_auto_rotate();
+                                    }
+                                    KeyCode::Char('h') => {
+                                        // Toggle hints visibility
+                                        app.toggle_hints();
                                     }
                                     _ => {}
                                 }
@@ -94,6 +114,8 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
                         }
                     }
                 }
+
+                _ => {} // Ignore other events (mouse, focus, etc.)
             }
         }
 

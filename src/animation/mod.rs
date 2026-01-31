@@ -39,7 +39,7 @@ impl AnimationEngine {
         // Keep the current theme on reset
     }
 
-    pub fn tick(&mut self, state: &TimerState) {
+    pub fn tick(&mut self, state: &TimerState, auto_rotate: bool) {
         let frame_duration = Duration::from_millis(1000 / self.fps as u64);
 
         if self.last_frame_time.elapsed() >= frame_duration {
@@ -54,8 +54,8 @@ impl AnimationEngine {
             }
         }
 
-        // Check for automatic theme rotation
-        if self.should_rotate_theme() {
+        // Check for automatic theme rotation (only if enabled)
+        if auto_rotate && self.should_rotate_theme() {
             self.rotate_theme();
         }
     }

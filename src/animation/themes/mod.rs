@@ -12,8 +12,19 @@ pub mod dna;
 pub mod bubbles;
 pub mod electric;
 pub mod snowfall;
+pub mod nature;
+pub mod geometric;
+pub mod glitch;
+pub mod minimal;
+pub mod seasonal;
+pub mod landscape;
+pub mod claude;
+pub mod github;
+pub mod medieval;
+pub mod synthwave;
 
 use ratatui::prelude::*;
+use crate::animation::digit_fonts::DigitFont;
 
 /// All available animation themes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,6 +43,16 @@ pub enum ThemeType {
     Bubbles,
     Electric,
     Snowfall,
+    Nature,
+    Geometric,
+    Glitch,
+    Minimal,
+    Seasonal,
+    Landscape,
+    Claude,
+    GitHub,
+    Medieval,
+    Synthwave,
 }
 
 impl ThemeType {
@@ -52,6 +73,16 @@ impl ThemeType {
             ThemeType::Bubbles,
             ThemeType::Electric,
             ThemeType::Snowfall,
+            ThemeType::Nature,
+            ThemeType::Geometric,
+            ThemeType::Glitch,
+            ThemeType::Minimal,
+            ThemeType::Seasonal,
+            ThemeType::Landscape,
+            ThemeType::Claude,
+            ThemeType::GitHub,
+            ThemeType::Medieval,
+            ThemeType::Synthwave,
         ]
     }
 
@@ -102,6 +133,16 @@ impl ThemeType {
             ThemeType::Bubbles => "Bubbles",
             ThemeType::Electric => "Electric Storm",
             ThemeType::Snowfall => "Snowfall",
+            ThemeType::Nature => "Forest Nature",
+            ThemeType::Geometric => "Geometric Patterns",
+            ThemeType::Glitch => "Glitch Cyberpunk",
+            ThemeType::Minimal => "Minimal Zen",
+            ThemeType::Seasonal => "Seasonal",
+            ThemeType::Landscape => "Landscape",
+            ThemeType::Claude => "Claude",
+            ThemeType::GitHub => "GitHub",
+            ThemeType::Medieval => "Medieval",
+            ThemeType::Synthwave => "Synthwave",
         }
     }
 
@@ -122,6 +163,16 @@ impl ThemeType {
             ThemeType::Bubbles => bubbles::render_background(frame, area, frame_index),
             ThemeType::Electric => electric::render_background(frame, area, frame_index),
             ThemeType::Snowfall => snowfall::render_background(frame, area, frame_index),
+            ThemeType::Nature => nature::render_background(frame, area, frame_index),
+            ThemeType::Geometric => geometric::render_background(frame, area, frame_index),
+            ThemeType::Glitch => glitch::render_background(frame, area, frame_index),
+            ThemeType::Minimal => minimal::render_background(frame, area, frame_index),
+            ThemeType::Seasonal => seasonal::render_background(frame, area, frame_index),
+            ThemeType::Landscape => landscape::render_background(frame, area, frame_index),
+            ThemeType::Claude => claude::render_background(frame, area, frame_index),
+            ThemeType::GitHub => github::render_background(frame, area, frame_index),
+            ThemeType::Medieval => medieval::render_background(frame, area, frame_index),
+            ThemeType::Synthwave => synthwave::render_background(frame, area, frame_index),
         }
     }
 
@@ -142,6 +193,16 @@ impl ThemeType {
             ThemeType::Bubbles => Color::Rgb(180, 220, 255),   // Bubble blue
             ThemeType::Electric => Color::Rgb(150, 200, 255),  // Electric blue
             ThemeType::Snowfall => Color::Rgb(220, 230, 255),  // Snow white
+            ThemeType::Nature => Color::Rgb(120, 200, 100),    // Forest green
+            ThemeType::Geometric => Color::Rgb(200, 150, 255), // Violet
+            ThemeType::Glitch => Color::Rgb(255, 50, 150),     // Hot pink
+            ThemeType::Minimal => Color::Rgb(150, 160, 180),   // Calm grey-blue
+            ThemeType::Seasonal => Color::Rgb(200, 180, 150),  // Warm neutral
+            ThemeType::Landscape => Color::Rgb(150, 200, 100), // Pastoral green
+            ThemeType::Claude => Color::Rgb(217, 119, 6),      // Anthropic orange
+            ThemeType::GitHub => Color::Rgb(57, 211, 83),      // GitHub green
+            ThemeType::Medieval => Color::Rgb(255, 180, 80),   // Torch orange
+            ThemeType::Synthwave => Color::Rgb(255, 100, 200), // Neon pink
         }
     }
 
@@ -162,6 +223,16 @@ impl ThemeType {
             ThemeType::Bubbles => Color::Rgb(80, 120, 150),
             ThemeType::Electric => Color::Rgb(50, 80, 150),
             ThemeType::Snowfall => Color::Rgb(100, 120, 150),
+            ThemeType::Nature => Color::Rgb(60, 100, 50),
+            ThemeType::Geometric => Color::Rgb(80, 60, 120),
+            ThemeType::Glitch => Color::Rgb(100, 0, 80),
+            ThemeType::Minimal => Color::Rgb(60, 70, 80),
+            ThemeType::Seasonal => Color::Rgb(100, 90, 80),
+            ThemeType::Landscape => Color::Rgb(80, 120, 60),
+            ThemeType::Claude => Color::Rgb(120, 70, 10),
+            ThemeType::GitHub => Color::Rgb(30, 100, 40),
+            ThemeType::Medieval => Color::Rgb(100, 60, 30),
+            ThemeType::Synthwave => Color::Rgb(150, 50, 100),
         }
     }
 
@@ -182,6 +253,34 @@ impl ThemeType {
             ThemeType::Bubbles => Color::Rgb(5, 15, 35),
             ThemeType::Electric => Color::Rgb(10, 10, 20),
             ThemeType::Snowfall => Color::Rgb(10, 15, 25),
+            ThemeType::Nature => Color::Rgb(15, 30, 20),
+            ThemeType::Geometric => Color::Rgb(8, 5, 15),
+            ThemeType::Glitch => Color::Rgb(5, 5, 12),
+            ThemeType::Minimal => Color::Rgb(12, 12, 15),
+            ThemeType::Seasonal => Color::Rgb(20, 20, 25),
+            ThemeType::Landscape => Color::Rgb(20, 30, 40),
+            ThemeType::Claude => Color::Rgb(30, 20, 15),
+            ThemeType::GitHub => Color::Rgb(13, 17, 23),
+            ThemeType::Medieval => Color::Rgb(15, 12, 10),
+            ThemeType::Synthwave => Color::Rgb(10, 5, 20),
+        }
+    }
+
+    /// Get the preferred font for this theme
+    pub fn font(&self) -> DigitFont {
+        match self {
+            ThemeType::Claude => DigitFont::ClaudeFont,
+            ThemeType::GitHub => DigitFont::Terminal,
+            ThemeType::Medieval => DigitFont::Gothic,
+            ThemeType::Synthwave => DigitFont::Neon,
+            ThemeType::Nature => DigitFont::Bamboo,
+            ThemeType::Geometric => DigitFont::Angular,
+            ThemeType::Glitch => DigitFont::Fragmented,
+            ThemeType::Minimal => DigitFont::Hairline,
+            ThemeType::Seasonal => DigitFont::SeasonalFont,
+            ThemeType::Landscape => DigitFont::Savanna,
+            // Default to Block3D for themes without a specific font
+            _ => DigitFont::Block3D,
         }
     }
 }

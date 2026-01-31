@@ -1,0 +1,37 @@
+{
+  "name": "pomowise",
+  "version": "1.0.0",
+  "description": "A retro terminal pomodoro timer - installer and setup wizard",
+  "type": "module",
+  "main": "lib/setup.js",
+  "bin": {
+    "pomowise": "./bin/pomowise.js"
+  },
+  "scripts": {
+    "test": "node bin/pomowise.js --help"
+  },
+  "keywords": [
+    "pomodoro",
+    "timer",
+    "terminal",
+    "tui",
+    "productivity",
+    "rust",
+    "retro"
+  ],
+  "author": "Kevin Krause",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "inquirer": "^9.2.12",
+    "ora": "^8.0.1",
+    "shelljs": "^0.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/pomowise.git"
+  }
+}

@@ -41,7 +41,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
     frame.render_widget(panel, panel_area);
 
     // Draw title centered in panel
-    let title = "tui-ansy-pomo";
+    let title = "pomowise";
     let title_x = panel_x + (panel_width.saturating_sub(title.len() as u16)) / 2;
     let title_y = panel_y + 2;
     if title_y < area.height && title_x < area.width {

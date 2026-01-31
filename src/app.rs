@@ -1,6 +1,7 @@
 use crate::animation::AnimationEngine;
 use crate::animation::themes::ThemeType;
 use crate::notification::notify_session_end;
+use crate::scaling::ScalingContext;
 use crate::timer::{PomodoroTimer, TimerState};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -23,10 +24,21 @@ pub struct App {
     pub should_quit: bool,
     pub theme_selector_open: bool,
     pub theme_selector_index: usize,
+    pub auto_rotate: bool,
+    pub hints_visible: bool,
+    pub hint_flash_frames: u32,
+    /// Current terminal dimensions and scaling context
+    pub scaling: ScalingContext,
+    /// Whether to use adaptive font (auto-select based on terminal size)
+    pub adaptive_font: bool,
 }
 
 impl App {
     pub fn new() -> Self {
+        // Get initial terminal size
+        let (width, height) = crossterm::terminal::size().unwrap_or((80, 24));
+        let scaling = ScalingContext::new(width, height);
+
         Self {
             screen: AppScreen::Menu,
             menu_selection: MenuItem::Start,
@@ -35,6 +47,29 @@ impl App {
             should_quit: false,
             theme_selector_open: false,
             theme_selector_index: 0,
+            auto_rotate: true,
+            hints_visible: true,
+            hint_flash_frames: 0,
+            scaling,
+            adaptive_font: true, // Enable adaptive font by default
+        }
+    }
+
+    /// Update terminal dimensions and recalculate scaling
+    pub fn update_dimensions(&mut self, width: u16, height: u16) {
+        self.scaling = ScalingContext::new(width, height);
+
+        // Auto-select font if adaptive mode is enabled
+        if self.adaptive_font {
+            self.animation.current_font = self.scaling.recommended_font;
+        }
+    }
+
+    /// Toggle adaptive font mode
+    pub fn toggle_adaptive_font(&mut self) {
+        self.adaptive_font = !self.adaptive_font;
+        if self.adaptive_font {
+            self.animation.current_font = self.scaling.recommended_font;
         }
     }
 
@@ -126,9 +161,28 @@ impl App {
         // Theme already set during navigation, just close
     }
 
+    /// Toggle auto-rotation of themes
+    pub fn toggle_auto_rotate(&mut self) {
+        self.auto_rotate = !self.auto_rotate;
+    }
+
+    /// Toggle hints visibility
+    pub fn toggle_hints(&mut self) {
+        self.hints_visible = !self.hints_visible;
+        if !self.hints_visible {
+            // Show flash message for ~2 seconds (20 frames at 10fps)
+            self.hint_flash_frames = 20;
+        }
+    }
+
     pub fn tick(&mut self) {
         // Always tick animation (for menu preview too)
-        self.animation.tick(&self.timer.state);
+        self.animation.tick(&self.timer.state, self.auto_rotate);
+
+        // Countdown hint flash
+        if self.hint_flash_frames > 0 {
+            self.hint_flash_frames -= 1;
+        }
 
         if self.screen == AppScreen::Timer {
             let previous_state = self.timer.state.clone();

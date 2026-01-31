@@ -6,6 +6,7 @@ use ratatui::{
 use crate::animation::digits;
 use crate::animation::themes::ThemeType;
 use crate::app::App;
+use crate::scaling::ScalingContext;
 
 pub fn draw(frame: &mut Frame, app: &App) {
     let area = frame.area();
@@ -15,8 +16,8 @@ pub fn draw(frame: &mut Frame, app: &App) {
         .current_theme
         .render_background(frame, area, app.animation.frame_index);
 
-    // Calculate timer area (centered region for digits)
-    let timer_area = centered_timer_area(area);
+    // Calculate timer area using scaling context
+    let timer_area = centered_timer_area(area, &app.scaling, app.animation.current_font);
 
     // Render big digits
     let time_secs = app.timer.remaining.as_secs();
@@ -33,7 +34,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
         app.animation.current_font,
     );
 
-    // Draw timer overlay info
+    // Draw timer overlay info (respects scaling context)
     draw_timer_overlay(frame, area, app);
 
     // Draw theme selector if open
@@ -42,34 +43,80 @@ pub fn draw(frame: &mut Frame, app: &App) {
     }
 }
 
-/// Calculate a centered area for the timer digits
-fn centered_timer_area(area: Rect) -> Rect {
-    // Use a larger default size to accommodate bigger fonts
-    let (timer_width, timer_height) = (40, 12);
+/// Calculate a centered area for the timer digits based on current font
+fn centered_timer_area(area: Rect, scaling: &ScalingContext, font: crate::animation::DigitFont) -> Rect {
+    // Calculate actual size needed for current font
+    let font_width = font.width();
+    let font_height = font.height();
+    let colon_width = font.colon_width();
 
-    // Add some padding
-    let padded_width = timer_width + 4;
-    let padded_height = timer_height + 2;
+    // Timer needs: 4 digits + colon + padding
+    let timer_width = (font_width * 4 + colon_width + 4).min(area.width);
+    let timer_height = (font_height + 2).min(area.height);
 
-    let x = area.x + area.width.saturating_sub(padded_width) / 2;
-    let y = area.y + area.height.saturating_sub(padded_height) / 2;
+    // Position: centered horizontally, slightly above center vertically
+    let x = area.x + area.width.saturating_sub(timer_width) / 2;
+    let y = scaling.timer_y().min(area.height.saturating_sub(timer_height));
 
     Rect::new(
         x,
         y,
-        padded_width.min(area.width.saturating_sub(x)),
-        padded_height.min(area.height.saturating_sub(y)),
+        timer_width,
+        timer_height,
     )
 }
 
 fn draw_timer_overlay(frame: &mut Frame, area: Rect, app: &App) {
+    // Early exit for very small terminals
     if area.width < 20 || area.height < 10 {
         return;
     }
 
+    let scaling = &app.scaling;
     let theme = &app.animation.current_theme;
     let primary = theme.primary_color();
     let bg_color = Color::Rgb(10, 10, 20);
+    let progress = app.timer.session_progress();
+
+    // In compact mode, skip some UI elements
+    let show_session_info = scaling.show_session_info;
+    let show_hints = scaling.show_hints;
+
+    // ZEN MODE: When hints are hidden, only show minimal discrete progress
+    if !app.hints_visible {
+        // Ultra-discrete progress line at very bottom (1px tall, no border)
+        let filled_width = (area.width as f64 * progress) as u16;
+
+        // Very subtle progress indicator - just a thin line
+        let dim_primary = match primary {
+            Color::Rgb(r, g, b) => Color::Rgb(r / 3, g / 3, b / 3),
+            _ => Color::Rgb(40, 40, 50),
+        };
+
+        // Draw filled portion
+        for x in 0..filled_width {
+            frame.render_widget(
+                Paragraph::new("▁").style(Style::default().fg(dim_primary)),
+                Rect::new(area.x + x, area.y + area.height - 1, 1, 1),
+            );
+        }
+
+        // Flash message when first hidden
+        if app.hint_flash_frames > 0 {
+            let flash = "h: show UI";
+            let flash_len = flash.len() as u16;
+            let flash_x = area.width.saturating_sub(flash_len) / 2;
+            let intensity = (app.hint_flash_frames as u8 * 5).min(100);
+            frame.render_widget(
+                Paragraph::new(flash).style(Style::default().fg(Color::Rgb(intensity, intensity, intensity + 20))),
+                Rect::new(flash_x, area.height / 2 + 8, flash_len, 1),
+            );
+        }
+
+        return; // Exit early - zen mode shows nothing else
+    }
+
+    // NORMAL MODE: Full UI with all info panels
 
     // Timer display in top-right (small digital clock)
     let time_secs = app.timer.remaining.as_secs();
@@ -96,26 +143,32 @@ fn draw_timer_overlay(frame: &mut Frame, area: Rect, app: &App) {
         Rect::new(time_x, 1, 8.min(area.width.saturating_sub(time_x)), 1),
     );
 
-    // Session info in top-left
-    let session_name = app.timer.session_name();
-    let lap_info = if app.timer.total_laps() > 0 {
-        format!(" (Lap {}/{})", app.timer.current_lap(), app.timer.total_laps())
+    // Session info in top-left (hidden in compact mode)
+    let info_width = if show_session_info {
+        let session_name = app.timer.session_name();
+        let lap_info = if app.timer.total_laps() > 0 {
+            format!(" (Lap {}/{})", app.timer.current_lap(), app.timer.total_laps())
+        } else {
+            String::new()
+        };
+        let session_str = format!("{}{}", session_name, lap_info);
+
+        let info_width = (session_str.len() as u16 + 4).min(area.width);
+        let info_bg = Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(primary))
+            .style(Style::default().bg(bg_color));
+        frame.render_widget(info_bg, Rect::new(0, 0, info_width, 3));
+
+        frame.render_widget(
+            Paragraph::new(session_str).style(Style::default().fg(primary)),
+            Rect::new(2, 1, info_width.saturating_sub(4), 1),
+        );
+
+        info_width
     } else {
-        String::new()
+        0
     };
-    let session_str = format!("{}{}", session_name, lap_info);
-
-    let info_width = (session_str.len() as u16 + 4).min(area.width);
-    let info_bg = Block::default()
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(primary))
-        .style(Style::default().bg(bg_color));
-    frame.render_widget(info_bg, Rect::new(0, 0, info_width, 3));
-
-    frame.render_widget(
-        Paragraph::new(session_str).style(Style::default().fg(primary)),
-        Rect::new(2, 1, info_width.saturating_sub(4), 1),
-    );
 
     // Theme name indicator (top center)
     let theme_name = format!(" {} ", theme.name());
@@ -129,8 +182,7 @@ fn draw_timer_overlay(frame: &mut Frame, area: Rect, app: &App) {
         );
     }
 
-    // Progress bar at bottom
-    let progress = app.timer.session_progress();
+    // Progress bar at bottom (full style with border)
     let gauge = Gauge::default()
         .block(
             Block::default()
@@ -149,17 +201,36 @@ fn draw_timer_overlay(frame: &mut Frame, area: Rect, app: &App) {
         Rect::new(0, area.height.saturating_sub(3), area.width, 3.min(area.height)),
     );
 
-    // Controls hint
-    let hint = "Space: Pause  r: Reset  Tab: Skip  t: Themes  f: Font  q: Menu";
-    let hint_len = hint.len() as u16;
-    let hint_x = area.width.saturating_sub(hint_len) / 2;
-    let hint_y = area.height.saturating_sub(4);
-    let hint_width = hint_len.min(area.width.saturating_sub(hint_x));
-    if hint_y > 3 {
-        frame.render_widget(
-            Paragraph::new(hint).style(Style::default().fg(Color::Rgb(80, 80, 100))),
-            Rect::new(hint_x, hint_y, hint_width, 1),
-        );
+    // Auto-rotate indicator (when disabled)
+    if !app.auto_rotate {
+        let lock_text = "[theme locked]";
+        let lock_x = area.width.saturating_sub(lock_text.len() as u16 + 2);
+        if lock_x > 0 {
+            frame.render_widget(
+                Paragraph::new(lock_text).style(Style::default().fg(Color::Rgb(100, 80, 80))),
+                Rect::new(lock_x, 3, lock_text.len() as u16, 1),
+            );
+        }
+    }
+
+    // Controls hint (hidden in compact mode or when scaling says to hide)
+    if show_hints {
+        let hint_y = area.height.saturating_sub(4);
+        if hint_y > 3 {
+            // Shorter hint for smaller terminals
+            let hint = if area.width < 70 {
+                "Space:Pause r:Reset t:Theme h:Zen q:Menu"
+            } else {
+                "Space: Pause  r: Reset  Tab: Skip  t: Themes  f: Font  a: Auto  h: Zen  q: Menu"
+            };
+            let hint_len = hint.len() as u16;
+            let hint_x = area.width.saturating_sub(hint_len) / 2;
+            let hint_width = hint_len.min(area.width.saturating_sub(hint_x));
+            frame.render_widget(
+                Paragraph::new(hint).style(Style::default().fg(Color::Rgb(80, 80, 100))),
+                Rect::new(hint_x, hint_y, hint_width, 1),
+            );
+        }
     }
 }
 
