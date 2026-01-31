@@ -7,8 +7,8 @@ import ora from 'ora';
 import { colors, status, animatedProgress, sleep } from './ui.js';
 
 const REPO_URL = 'https://github.com/yourusername/pomowise.git';
-const INSTALL_DIR = join(homedir(), '.pomowise');
-const BINARY_NAME = process.platform === 'win32' ? 'pomowise.exe' : 'pomowise';
+export const INSTALL_DIR = join(homedir(), '.pomowise');
+export const BINARY_NAME = process.platform === 'win32' ? 'pomowise.exe' : 'pomowise';
 
 // Install Rust via rustup
 export async function installRust() {
