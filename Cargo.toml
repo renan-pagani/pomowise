@@ -1,0 +1,11 @@
+[package]
+name = "tui-ansy-pomo"
+version = "0.1.0"
+edition = "2021"
+description = "Animated Pomodoro Timer with pixel-art tomato"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+notify-rust = "4"
+tokio = { version = "1", features = ["rt", "time", "macros", "rt-multi-thread"] }
