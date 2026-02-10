@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            ext: ''
+          - target: x86_64-apple-darwin
+            os: macos-13
+            ext: ''
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            ext: ''
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            ext: '.exe'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev pkg-config libgtk-3-dev libayatana-appindicator3-dev libxdo-dev
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/pomowise dist/
+          cp target/${{ matrix.target }}/release/pomowise-tray dist/ || true
+          cd dist && tar -czf ../pomowise-${{ matrix.target }}.tar.gz *
+          cd .. && sha256sum pomowise-${{ matrix.target }}.tar.gz > pomowise-${{ matrix.target }}.tar.gz.sha256
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/pomowise dist/
+          cp target/${{ matrix.target }}/release/pomowise-tray dist/ || true
+          cd dist && tar -czf ../pomowise-${{ matrix.target }}.tar.gz *
+          cd .. && shasum -a 256 pomowise-${{ matrix.target }}.tar.gz > pomowise-${{ matrix.target }}.tar.gz.sha256
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          mkdir dist
+          cp target/${{ matrix.target }}/release/pomowise.exe dist/
+          cp target/${{ matrix.target }}/release/pomowise-tray.exe dist/ -ErrorAction SilentlyContinue
+          Compress-Archive -Path dist/* -DestinationPath pomowise-${{ matrix.target }}.zip
+          (Get-FileHash pomowise-${{ matrix.target }}.zip -Algorithm SHA256).Hash.ToLower() + "  pomowise-${{ matrix.target }}.zip" | Out-File -Encoding utf8 pomowise-${{ matrix.target }}.zip.sha256
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pomowise-${{ matrix.target }}
+          path: pomowise-${{ matrix.target }}.*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            pomowise-*/*.tar.gz
+            pomowise-*/*.tar.gz.sha256
+            pomowise-*/*.zip
+            pomowise-*/*.zip.sha256
+          generate_release_notes: true
+
+  publish-npm:
+    needs: release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm package version
+        working-directory: npm
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          npm version $VERSION --no-git-tag-version
+          sed -i'' -e "s/const VERSION = '.*'/const VERSION = '$VERSION'/" scripts/install-binary.js
+
+      - name: Publish to npm
+        working-directory: npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

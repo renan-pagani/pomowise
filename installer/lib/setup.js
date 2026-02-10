@@ -62,7 +62,7 @@ ${colors.secondary('AFTER INSTALLATION:')}
     ${colors.accent('pomo')}
 
 ${colors.secondary('REPOSITORY:')}
-  https://github.com/yourusername/pomowise
+  https://github.com/renan-pagani/pomowise
 
 ${colors.dim('Built with love and caffeine.')}
 `);
@@ -195,7 +195,7 @@ export async function runSetup() {
           type: 'input',
           name: 'repoUrl',
           message: 'Repository URL:',
-          default: 'https://github.com/yourusername/pomowise.git',
+          default: 'https://github.com/renan-pagani/pomowise.git',
         },
       ]);
 

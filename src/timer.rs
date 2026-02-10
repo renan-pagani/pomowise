@@ -1,4 +1,5 @@
 use std::time::{Duration, Instant};
+use serde::{Serialize, Deserialize};
 
 const WORK_DURATION: Duration = Duration::from_secs(25 * 60);
 const SHORT_BREAK_DURATION: Duration = Duration::from_secs(5 * 60);
@@ -7,7 +8,7 @@ const LONG_BREAK_DURATION: Duration = Duration::from_secs(15 * 60);
 const WORK_LAPS: u8 = 10;
 const SHORT_BREAK_LAPS: u8 = 3;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TimerState {
     Idle,
     Work { lap: u8 },
@@ -21,6 +22,16 @@ pub struct PomodoroTimer {
     pub remaining: Duration,
     pub cycle_position: u8, // 0-4 for the 5-phase cycle
     last_tick: Option<Instant>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TimerSnapshot {
+    pub state: TimerState,
+    pub remaining_secs: u64,
+    pub session_name: String,
+    pub session_progress: f64,
+    pub is_paused: bool,
+    pub cycle_position: u8,
 }
 
 impl PomodoroTimer {
@@ -193,5 +204,16 @@ impl PomodoroTimer {
         };
 
         1.0 - (self.remaining.as_secs_f64() / total.as_secs_f64())
+    }
+
+    pub fn snapshot(&self) -> TimerSnapshot {
+        TimerSnapshot {
+            state: self.state.clone(),
+            remaining_secs: self.remaining.as_secs(),
+            session_name: self.session_name().to_string(),
+            session_progress: self.session_progress(),
+            is_paused: self.is_paused(),
+            cycle_position: self.cycle_position,
+        }
     }
 }

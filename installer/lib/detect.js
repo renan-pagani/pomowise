@@ -1,8 +1,16 @@
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { existsSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import shell from 'shelljs';
+
+function which(cmd) {
+  try {
+    const command = process.platform === 'win32' ? `where ${cmd}` : `command -v ${cmd}`;
+    return execSync(command, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim().split('\n')[0] || null;
+  } catch {
+    return null;
+  }
+}
 
 // Detect operating system
 export function detectOS() {
@@ -96,7 +104,7 @@ export function checkRust() {
       installed: true,
       rustcVersion,
       cargoVersion,
-      path: shell.which('rustc'),
+      path: which('rustc'),
     };
   } catch (err) {
     return {
@@ -115,7 +123,7 @@ export function checkGit() {
     return {
       installed: true,
       version,
-      path: shell.which('git'),
+      path: which('git'),
     };
   } catch (err) {
     return {
@@ -133,7 +141,7 @@ export function getArchitecture() {
 
 // Check if command exists
 export function commandExists(cmd) {
-  return shell.which(cmd) !== null;
+  return which(cmd) !== null;
 }
 
 // Get all shell config files that might exist

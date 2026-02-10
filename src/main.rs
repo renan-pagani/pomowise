@@ -1,14 +1,16 @@
 mod app;
-mod timer;
 mod notification;
 mod ui;
 mod animation;
 mod scaling;
 
+use pomowise::ipc;
+
 use std::io;
 use std::time::Duration;
 
 use crossterm::{
+    cursor::Show,
     event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -17,25 +19,30 @@ use ratatui::prelude::*;
 
 use app::{App, AppScreen};
 
-#[tokio::main]
+struct TerminalGuard;
+
+impl Drop for TerminalGuard {
+    fn drop(&mut self) {
+        let _ = disable_raw_mode();
+        let _ = execute!(io::stdout(), LeaveAlternateScreen);
+        let _ = execute!(io::stdout(), Show);
+    }
+}
+
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> io::Result<()> {
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
+    let _guard = TerminalGuard; // RAII: ensures cleanup on drop, even on panic
+
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
     // Create app and run
     let mut app = App::new();
-    let result = run_app(&mut terminal, &mut app).await;
-
-    // Restore terminal
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-
-    result
+    run_app(&mut terminal, &mut app).await
 }
 
 async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
@@ -61,10 +68,14 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
                             KeyCode::Down | KeyCode::Char('j') => app.menu_down(),
                             KeyCode::Enter => {
                                 if !app.menu_select() {
+                                    ipc::cleanup();
                                     return Ok(());
                                 }
                             }
-                            KeyCode::Char('q') => return Ok(()),
+                            KeyCode::Char('q') => {
+                                ipc::cleanup();
+                                return Ok(());
+                            }
                             _ => {}
                         },
                         AppScreen::Timer => {
@@ -122,7 +133,14 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
         // Update timer and animation
         app.tick();
 
+        // Write timer state for tray to read
+        if app.screen == AppScreen::Timer {
+            let snapshot = app.timer.snapshot();
+            let _ = ipc::write_status(&snapshot);
+        }
+
         if app.should_quit {
+            ipc::cleanup();
             return Ok(());
         }
     }

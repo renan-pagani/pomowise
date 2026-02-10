@@ -1,7 +1,8 @@
 # Build artifacts
 /target/
 
-installer/node_modules/*
+installer/node_modules/
+npm/node_modules/
 
 # IDE
 .idea/
@@ -16,3 +17,6 @@ Thumbs.db
 
 # Debug
 *.log
+
+# npm pack artifacts
+*.tgz

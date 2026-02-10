@@ -8,4 +8,22 @@ description = "Animated Pomodoro Timer with beautiful themes"
 ratatui = "0.29"
 crossterm = "0.28"
 notify-rust = "4"
-tokio = { version = "1", features = ["rt", "time", "macros", "rt-multi-thread"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "time", "macros"] }
+tray-icon = "0.19"
+
+[lib]
+name = "pomowise"
+path = "src/lib.rs"
+
+[[bin]]
+name = "pomowise"
+path = "src/main.rs"
+
+[[bin]]
+name = "pomowise-tray"
+path = "src/bin/pomowise-tray.rs"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"

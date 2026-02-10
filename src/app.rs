@@ -2,7 +2,7 @@ use crate::animation::AnimationEngine;
 use crate::animation::themes::ThemeType;
 use crate::notification::notify_session_end;
 use crate::scaling::ScalingContext;
-use crate::timer::{PomodoroTimer, TimerState};
+use pomowise::timer::{PomodoroTimer, TimerState};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AppScreen {

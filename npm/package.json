@@ -1,14 +1,15 @@
 {
   "name": "pomowise",
   "version": "1.0.0",
-  "description": "A retro terminal pomodoro timer - installer and setup wizard",
+  "description": "Beautiful animated Pomodoro timer for your terminal with system tray support",
   "type": "module",
-  "main": "lib/setup.js",
   "bin": {
-    "pomowise": "./bin/pomowise.js"
+    "pomo": "./bin/pomo.js",
+    "pomo-tray": "./bin/pomo-tray.js"
   },
   "scripts": {
-    "test": "node bin/pomowise.js --help"
+    "postinstall": "node ./scripts/install-binary.js",
+    "preuninstall": "node ./scripts/uninstall.js"
   },
   "keywords": [
     "pomodoro",
@@ -16,16 +17,10 @@
     "terminal",
     "tui",
     "productivity",
-    "rust",
-    "retro"
+    "system-tray"
   ],
   "author": "Kevin Krause",
   "license": "MIT",
-  "dependencies": {
-    "chalk": "^5.3.0",
-    "inquirer": "^9.2.12",
-    "ora": "^8.0.1"
-  },
   "engines": {
     "node": ">=18.0.0"
   },

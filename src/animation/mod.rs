@@ -6,7 +6,7 @@ pub use digit_fonts::DigitFont;
 
 use std::time::{Duration, Instant};
 
-use crate::timer::TimerState;
+use pomowise::timer::TimerState;
 use themes::ThemeType;
 
 /// Theme rotation interval: 2.5 minutes

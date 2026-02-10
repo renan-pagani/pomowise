@@ -1,12 +1,11 @@
 import { execSync, spawn } from 'child_process';
-import { existsSync, mkdirSync, appendFileSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, appendFileSync, readFileSync, writeFileSync, copyFileSync, chmodSync, rmSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import shell from 'shelljs';
 import ora from 'ora';
 import { colors, status, animatedProgress, sleep } from './ui.js';
 
-const REPO_URL = 'https://github.com/yourusername/pomowise.git';
+const REPO_URL = 'https://github.com/renan-pagani/pomowise.git';
 export const INSTALL_DIR = join(homedir(), '.pomowise');
 export const BINARY_NAME = process.platform === 'win32' ? 'pomowise.exe' : 'pomowise';
 
@@ -90,7 +89,10 @@ export async function cloneRepo(repoUrl = REPO_URL) {
 
     // Remove existing source if present
     if (existsSync(srcDir)) {
-      shell.rm('-rf', srcDir);
+      if (!srcDir.startsWith(INSTALL_DIR)) {
+        throw new Error('Refusing to delete path outside install directory');
+      }
+      rmSync(srcDir, { recursive: true, force: true });
     }
 
     const git = spawn('git', ['clone', '--depth', '1', repoUrl, srcDir], {
@@ -213,8 +215,8 @@ export function installBinary(binaryPath) {
   const destPath = join(binDir, BINARY_NAME);
 
   try {
-    shell.cp(binaryPath, destPath);
-    shell.chmod('+x', destPath);
+    copyFileSync(binaryPath, destPath);
+    chmodSync(destPath, 0o755);
     return destPath;
   } catch (err) {
     console.error(colors.error(`Failed to install binary: ${err.message}`));
