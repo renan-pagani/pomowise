@@ -110,7 +110,7 @@ jobs:
         working-directory: npm
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          npm version $VERSION --no-git-tag-version
+          npm version $VERSION --no-git-tag-version --allow-same-version
           sed -i'' -e "s/const VERSION = '.*'/const VERSION = '$VERSION'/" scripts/install-binary.js
 
       - name: Publish to npm
