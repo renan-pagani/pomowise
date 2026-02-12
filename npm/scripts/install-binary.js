@@ -16,7 +16,7 @@ function getTarget() {
 
   const targets = {
     'linux-x64': 'x86_64-unknown-linux-gnu',
-    'darwin-x64': 'x86_64-apple-darwin',
+    'darwin-x64': 'aarch64-apple-darwin', // ARM64 works on Intel via Rosetta 2
     'darwin-arm64': 'aarch64-apple-darwin',
     'win32-x64': 'x86_64-pc-windows-msvc',
   };
